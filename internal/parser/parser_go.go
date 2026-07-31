@@ -235,42 +235,6 @@ func docCommentFromGroup(g *ast.CommentGroup) string {
 	return g.Text()
 }
 
-// ParseGoDir parses all .go files in a directory.
-func ParseGoDir(dir string) ([]symbol.Symbol, error) {
-	fset := token.NewFileSet()
-	pkgs, err := parser.ParseDir(fset, dir, nil, parser.ParseComments)
-	if err != nil {
-		return nil, err
-	}
-
-	var syms []symbol.Symbol
-	for _, pkg := range pkgs {
-		for path, f := range pkg.Files {
-			fileSyms, err := parseASTFile(fset, f, path)
-			if err != nil {
-				return nil, err
-			}
-			syms = append(syms, fileSyms...)
-		}
-	}
-	return syms, nil
-}
-
-func parseASTFile(fset *token.FileSet, f *ast.File, path string) ([]symbol.Symbol, error) {
-	var syms []symbol.Symbol
-
-	for _, decl := range f.Decls {
-		switch d := decl.(type) {
-		case *ast.GenDecl:
-			syms = append(syms, parseGenDecl(d, fset, path)...)
-		case *ast.FuncDecl:
-			syms = append(syms, parseFuncDecl(d, fset, path))
-		}
-	}
-
-	return syms, nil
-}
-
 // ParseFile detects the language from the file extension and parses accordingly.
 func ParseFile(path string) ([]symbol.Symbol, error) {
 	data, err := os.ReadFile(path)

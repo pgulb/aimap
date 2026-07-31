@@ -92,7 +92,8 @@ aimap/
 
 #### cmd/aimap/main.go
 
-- `main` — function (lines 15-90)
+- `version` — variable (line 18) — version is set at build time via -ldflags, e.g.:
+- `main` — function (lines 20-118)
 
 #### internal/config/config.go
 
@@ -163,10 +164,8 @@ aimap/
 - `formatTypeParams` — function (lines 199-222) — formatTypeParams formats an ast.FieldList of type parameters as a string like "[T any]".
 - `exprString` — function (lines 225-229) — exprString converts an ast.Expr to a string representation using go/printer.
 - `docCommentFromGroup` — function (lines 231-236)
-- `ParseGoDir` — function (lines 239-257) — ParseGoDir parses all .go files in a directory.
-- `parseASTFile` — function (lines 259-272)
-- `ParseFile` — function (lines 275-290) — ParseFile detects the language from the file extension and parses accordingly.
-- `fileExt` — function (lines 292-302)
+- `ParseFile` — function (lines 239-254) — ParseFile detects the language from the file extension and parses accordingly.
+- `fileExt` — function (lines 256-266)
 
 #### internal/parser/parser_python.go
 
@@ -249,4 +248,43 @@ aimap/
 - `Constant` — constant (line 13)
 - `Class` — constant (line 14)
 - `Symbol` — struct (lines 18-27) — Symbol represents a named declaration in source code.
+
+#### internal/update/extract.go
+
+- `extractTarGz` — function (lines 15-58) — extractTarGz extracts the binary from a .tar.gz archive and replaces currentExe.
+- `extractZip` — function (lines 61-96) — extractZip extracts the binary from a .zip archive and replaces currentExe.
+- `replaceBinary` — function (lines 99-132) — replaceBinary replaces currentExe with newBinary.
+- `downloadFile` — function (lines 135-154) — downloadFile downloads a URL to the given file path.
+
+#### internal/update/marker.go
+
+- `markerFilename` — constant (line 9)
+- `MarkerDir` — function (lines 12-26) — MarkerDir returns the platform-specific directory for the self-update marker file.
+- `markerPath` — variable (lines 30-32) — markerPath returns the full path to the marker file.
+- `CanSelfUpdate` — function (lines 35-38) — CanSelfUpdate checks whether the self-update marker file exists.
+- `CreateMarker` — function (lines 41-51) — CreateMarker creates the self-update marker file and its parent directory.
+
+#### internal/update/marker_test.go
+
+- `TestMarkerDir` — function (lines 9-14)
+- `TestCanSelfUpdateFalseByDefault` — function (lines 16-22)
+- `TestCreateAndCheckMarker` — function (lines 24-49)
+- `TestCreateMarkerCreatesFile` — function (lines 52-69) — Test that the marker file is created at the expected path.
+
+#### internal/update/update.go
+
+- `repo` — constant (line 12)
+- `Do` — function (lines 16-50) — Do performs the self-update: checks the latest release on GitHub and replaces
+- `installRelease` — function (lines 53-80) — installRelease downloads and extracts the release archive, then replaces the binary.
+- `fetchLatestTag` — function (lines 83-113) — fetchLatestTag queries the GitHub API for the latest release tag.
+- `httpGet` — variable (line 115)
+
+#### internal/update/update_test.go
+
+- `TestFetchLatestTag` — function (lines 11-30)
+- `TestFetchLatestTagEmpty` — function (lines 32-48)
+- `TestFetchLatestTagHTTPError` — function (lines 50-66)
+- `TestDownloadFile` — function (lines 68-89)
+- `TestDoFailsWithoutMarker` — function (lines 91-104)
+- `TestReplaceBinary` — function (lines 106-129)
 
