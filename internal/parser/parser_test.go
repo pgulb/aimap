@@ -2,6 +2,7 @@ package parser
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/pgulb/aimap/internal/symbol"
@@ -493,6 +494,98 @@ class AsyncClient:
 	}
 }
 
+func TestParsePythonDocstrings(t *testing.T) {
+	source := `
+# Class with docstring
+class DataProcessor:
+    """Process data from various sources."""
+    
+    # Method with single-line docstring
+    def process(self):
+        """Transform raw data into structured format."""
+        pass
+    
+    # Method with multi-line docstring
+    def validate(self):
+        """Validate data integrity.
+        
+        Checks for missing values and type consistency."""
+        pass
+
+# Function with docstring
+def calculate_sum(numbers):
+    """Sum a list of numbers.
+    
+    Args:
+        numbers: A list of numeric values.
+    
+    Returns:
+        The sum of all numbers."""
+    return sum(numbers)
+
+# Function without docstring
+def helper():
+    x = 1
+    return x
+`
+	syms, err := ParsePythonFile("test.py", source)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	byName := make(map[string]symbol.Symbol)
+	for _, s := range syms {
+		byName[s.Name] = s
+	}
+
+	// Class docstring
+	proc, ok := byName["DataProcessor"]
+	if !ok {
+		t.Fatal("expected symbol DataProcessor")
+	}
+	if !strings.Contains(proc.Comment, "Process data from various sources") {
+		t.Errorf("DataProcessor.Comment = %q, want to contain 'Process data from various sources'", proc.Comment)
+	}
+
+	// Method with single-line docstring
+	processMethod, ok := byName["process"]
+	if !ok {
+		t.Fatal("expected symbol process")
+	}
+	if !strings.Contains(processMethod.Comment, "Transform raw data into structured format") {
+		t.Errorf("process.Comment = %q, want to contain 'Transform raw data into structured format'", processMethod.Comment)
+	}
+
+	// Method with multi-line docstring
+	validateMethod, ok := byName["validate"]
+	if !ok {
+		t.Fatal("expected symbol validate")
+	}
+	// Multi-line docstring should be collapsed to one line
+	if !strings.Contains(validateMethod.Comment, "Validate data integrity") {
+		t.Errorf("validate.Comment = %q, want to contain 'Validate data integrity'", validateMethod.Comment)
+	}
+
+	// Function with docstring
+	calcSum, ok := byName["calculate_sum"]
+	if !ok {
+		t.Fatal("expected symbol calculate_sum")
+	}
+	if !strings.Contains(calcSum.Comment, "Sum a list of numbers") {
+		t.Errorf("calculate_sum.Comment = %q, want to contain 'Sum a list of numbers'", calcSum.Comment)
+	}
+
+	// Function without docstring (but has a preceding comment)
+	helper, ok := byName["helper"]
+	if !ok {
+		t.Fatal("expected symbol helper")
+	}
+	// The comment "Function without docstring" is from the preceding # line
+	if !strings.Contains(helper.Comment, "Function without docstring") {
+		t.Errorf("helper.Comment = %q, want to contain 'Function without docstring'", helper.Comment)
+	}
+}
+
 func TestParsePythonDecorators(t *testing.T) {
 	source := `
 # Decorated function
@@ -544,6 +637,88 @@ class WrappedClass:
 	}
 	if value.Parent != "WrappedClass" {
 		t.Errorf("value.Parent = %q, want WrappedClass", value.Parent)
+	}
+}
+
+func TestParsePythonSpecialDecorators(t *testing.T) {
+	source := `
+class Calculator:
+    """A simple calculator."""
+    
+    def __init__(self):
+        self._value = 0
+    
+    # Property decorator
+    @property
+    def value(self):
+        """Get the current value."""
+        return self._value
+    
+    # Static method decorator
+    @staticmethod
+    def add(a, b):
+        """Add two numbers."""
+        return a + b
+    
+    # Class method decorator
+    @classmethod
+    def create(cls):
+        """Create a new calculator."""
+        return cls()
+`
+	syms, err := ParsePythonFile("test.py", source)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	byName := make(map[string]symbol.Symbol)
+	for _, s := range syms {
+		byName[s.Name] = s
+	}
+
+	// @property method should still be recognized as a Method
+	value, ok := byName["value"]
+	if !ok {
+		t.Fatal("expected symbol value (@property)")
+	}
+	if value.Kind != symbol.Method {
+		t.Errorf("value.Kind = %v, want Method", value.Kind)
+	}
+	if value.Parent != "Calculator" {
+		t.Errorf("value.Parent = %q, want Calculator", value.Parent)
+	}
+	if !strings.Contains(value.Comment, "Get the current value") {
+		t.Errorf("value.Comment = %q, want to contain 'Get the current value'", value.Comment)
+	}
+
+	// @staticmethod should still be recognized as a Method
+	add, ok := byName["add"]
+	if !ok {
+		t.Fatal("expected symbol add (@staticmethod)")
+	}
+	if add.Kind != symbol.Method {
+		t.Errorf("add.Kind = %v, want Method", add.Kind)
+	}
+	if add.Parent != "Calculator" {
+		t.Errorf("add.Parent = %q, want Calculator", add.Parent)
+	}
+	if !strings.Contains(add.Comment, "Add two numbers") {
+		t.Errorf("add.Comment = %q, want to contain 'Add two numbers'", add.Comment)
+	}
+
+	// @classmethod should still be recognized as a Method
+	create, ok := byName["create"]
+	if !ok {
+		t.Fatal("expected symbol create (@classmethod)")
+	}
+	if create.Kind != symbol.Method {
+		t.Errorf("create.Kind = %v, want Method", create.Kind)
+	}
+	if create.Parent != "Calculator" {
+		t.Errorf("create.Parent = %q, want Calculator", create.Parent)
+	}
+	if !strings.Contains(create.Comment, "Create a new calculator") {
+		t.Errorf("create.Comment = %q, want to contain 'Create a new calculator'", create.Comment)
 	}
 }
 

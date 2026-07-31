@@ -83,32 +83,37 @@
 
 #### internal/parser/parser_python.go
 
-- `ParsePythonFile` — function (lines 12-128) — ParsePythonFile parses a Python source string and extracts symbols.
-- `collectComment` — function (lines 131-137) — collectComment accumulates lines into a pending doc comment.
-- `extractPythonName` — function (lines 140-157) — extractPythonName extracts the name after a keyword (def or class).
-- `extractAssignName` — function (lines 160-181) — extractAssignName gets the variable name from a top-level assignment.
-- `findFunctionEnd` — function (lines 184-201) — findFunctionEnd finds the last line of a function body given the starting line (1-based) and indentation.
-- `leadingSpaces` — function (lines 204-216) — leadingSpaces counts the number of leading spaces in a line.
-- `isTopLevel` — function (lines 219-221) — isTopLevel checks if indentation indicates top-level scope.
+- `ParsePythonFile` — function (lines 12-159) — ParsePythonFile parses a Python source string and extracts symbols.
+- `collectComment` — function (lines 162-168) — collectComment accumulates lines into a pending doc comment.
+- `extractPythonName` — function (lines 171-188) — extractPythonName extracts the name after a keyword (def or class).
+- `extractAssignName` — function (lines 191-212) — extractAssignName gets the variable name from a top-level assignment.
+- `findFunctionEnd` — function (lines 215-232) — findFunctionEnd finds the last line of a function body given the starting line (1-based) and indentation.
+- `leadingSpaces` — function (lines 235-247) — leadingSpaces counts the number of leading spaces in a line.
+- `isTopLevel` — function (lines 250-252) — isTopLevel checks if indentation indicates top-level scope.
+- `extractDecoratorName` — function (lines 256-268) — extractDecoratorName extracts the decorator name from a decorator line.
+- `extractDocstringAfter` — function (lines 273-300) — extractDocstringAfter looks ahead from the current line (def/class line)
+- `extractDocstringContent` — function (lines 304-358) — extractDocstringContent extracts the content of a docstring that starts at docstringLineIdx.
 
 #### internal/parser/parser_test.go
 
-- `TestParseGoFile` — function (lines 10-71)
-- `TestParseGoGenericType` — function (lines 73-106)
-- `TestParseGoGenericMethod` — function (lines 108-130)
-- `TestParseGoGenericFunction` — function (lines 132-154)
-- `TestParseGoInterfaceMethods` — function (lines 156-225)
-- `TestParseGoEmbeddedFields` — function (lines 227-253)
-- `TestParseGoFileWithComments` — function (lines 255-274)
-- `TestParseEmptyGoFile` — function (lines 276-284)
-- `TestParseNonExistentGoFile` — function (lines 286-291)
-- `TestParsePythonFile` — function (lines 293-372)
-- `TestParsePythonEmptyFile` — function (lines 374-382)
-- `TestParsePythonLineNumbers` — function (lines 384-418)
-- `TestParseGoVariable` — function (lines 420-439)
-- `TestParsePythonAsyncDef` — function (lines 441-494)
-- `TestParsePythonDecorators` — function (lines 496-548)
-- `TestParseGoNamedStructFields` — function (lines 550-619)
+- `TestParseGoFile` — function (lines 11-72)
+- `TestParseGoGenericType` — function (lines 74-107)
+- `TestParseGoGenericMethod` — function (lines 109-131)
+- `TestParseGoGenericFunction` — function (lines 133-155)
+- `TestParseGoInterfaceMethods` — function (lines 157-226)
+- `TestParseGoEmbeddedFields` — function (lines 228-254)
+- `TestParseGoFileWithComments` — function (lines 256-275)
+- `TestParseEmptyGoFile` — function (lines 277-285)
+- `TestParseNonExistentGoFile` — function (lines 287-292)
+- `TestParsePythonFile` — function (lines 294-373)
+- `TestParsePythonEmptyFile` — function (lines 375-383)
+- `TestParsePythonLineNumbers` — function (lines 385-419)
+- `TestParseGoVariable` — function (lines 421-440)
+- `TestParsePythonAsyncDef` — function (lines 442-495)
+- `TestParsePythonDocstrings` — function (lines 497-587)
+- `TestParsePythonDecorators` — function (lines 589-641)
+- `TestParsePythonSpecialDecorators` — function (lines 643-723)
+- `TestParseGoNamedStructFields` — function (lines 725-794)
 
 #### internal/parser/testdata/src/comments.go
 

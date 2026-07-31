@@ -19,6 +19,9 @@ func ParsePythonFile(path, source string) ([]symbol.Symbol, error) {
 
 	// Collect pending doc comments (comments preceding a definition).
 	var pendingComment string
+	
+	// Track decorators for current definition (e.g., @property, @staticmethod, @classmethod).
+	var pendingDecorators []string
 
 	for i := 0; i < len(lines); i++ {
 		line := lines[i]
@@ -38,8 +41,13 @@ func ParsePythonFile(path, source string) ([]symbol.Symbol, error) {
 		indent := leadingSpaces(line)
 		stripped := strings.TrimLeftFunc(line, unicode.IsSpace)
 
-		// Decorator lines — skip them, they are not symbols.
+		// Decorator lines — collect them for method classification, then skip.
 		if strings.HasPrefix(stripped, "@") {
+			// Extract decorator name (e.g., "property" from "@property")
+			decoratorName := extractDecoratorName(stripped)
+			if decoratorName != "" {
+				pendingDecorators = append(pendingDecorators, decoratorName)
+			}
 			continue
 		}
 
@@ -47,13 +55,22 @@ func ParsePythonFile(path, source string) ([]symbol.Symbol, error) {
 		if strings.HasPrefix(stripped, "class ") {
 			name := extractPythonName(stripped, "class ")
 			if name != "" {
+				// Extract docstring if present
+				docstring := extractDocstringAfter(lines, i, indent)
+				comment := pendingComment
+				if docstring != "" && comment == "" {
+					comment = docstring
+				} else if docstring != "" && comment != "" {
+					comment = comment + "\n" + docstring
+				}
+				
 				s := symbol.Symbol{
 					Name:      name,
 					Kind:      symbol.Class,
 					FilePath:  path,
 					LineStart: i + 1,
 					LineEnd:   i + 1,
-					Comment:   pendingComment,
+					Comment:   comment,
 				}
 				syms = append(syms, s)
 
@@ -61,6 +78,7 @@ func ParsePythonFile(path, source string) ([]symbol.Symbol, error) {
 				currentClassIndent = indent
 			}
 			pendingComment = ""
+			pendingDecorators = nil
 			continue
 		}
 
@@ -80,6 +98,18 @@ func ParsePythonFile(path, source string) ([]symbol.Symbol, error) {
 				if currentClass != "" && indent > currentClassIndent {
 					kind = symbol.Method
 					parent = currentClass
+					
+					// Check for special decorators to override method kind if needed
+					// (Currently we keep as Method, but could distinguish @property, etc. if needed)
+				}
+
+				// Extract docstring if present
+				docstring := extractDocstringAfter(lines, i, indent)
+				comment := pendingComment
+				if docstring != "" && comment == "" {
+					comment = docstring
+				} else if docstring != "" && comment != "" {
+					comment = comment + "\n" + docstring
 				}
 
 				s := symbol.Symbol{
@@ -88,12 +118,13 @@ func ParsePythonFile(path, source string) ([]symbol.Symbol, error) {
 					FilePath:  path,
 					LineStart: i + 1,
 					LineEnd:   endLine,
-					Comment:   pendingComment,
+					Comment:   comment,
 					Parent:    parent,
 				}
 				syms = append(syms, s)
 			}
 			pendingComment = ""
+			pendingDecorators = nil
 			continue
 		}
 
@@ -218,4 +249,110 @@ func leadingSpaces(line string) int {
 // isTopLevel checks if indentation indicates top-level scope.
 func isTopLevel(indent int) bool {
 	return indent == 0
+}
+
+// extractDecoratorName extracts the decorator name from a decorator line.
+// E.g., "@property" -> "property", "@foo.bar" -> "foo"
+func extractDecoratorName(line string) string {
+	// Remove leading @ and whitespace
+	line = strings.TrimSpace(strings.TrimPrefix(line, "@"))
+	if line == "" {
+		return ""
+	}
+	// Get the first identifier before any parentheses or dots
+	endIdx := strings.IndexAny(line, "(.)")
+	if endIdx > 0 {
+		line = line[:endIdx]
+	}
+	return strings.TrimSpace(line)
+}
+
+// extractDocstringAfter looks ahead from the current line (def/class line)
+// to find a docstring (triple-quoted string) in the function/class body.
+// Returns the docstring content (without quotes) if found, empty string otherwise.
+func extractDocstringAfter(lines []string, defLineIdx int, defIndent int) string {
+	// Start looking at the next line after def/class
+	for i := defLineIdx + 1; i < len(lines); i++ {
+		line := lines[i]
+		trimmed := strings.TrimSpace(line)
+		
+		// Skip empty lines
+		if trimmed == "" {
+			continue
+		}
+		
+		indent := leadingSpaces(line)
+		
+		// Stop if we hit a line at the same or lower indentation (end of body)
+		if indent <= defIndent {
+			break
+		}
+		
+		// Check for docstring (triple-quoted string)
+		if strings.HasPrefix(trimmed, `"""`) || strings.HasPrefix(trimmed, "'''") {
+			return extractDocstringContent(lines, i, defIndent)
+		}
+		
+		// Any other non-empty, indented line means no docstring at the start
+		break
+	}
+	return ""
+}
+
+// extractDocstringContent extracts the content of a docstring that starts at docstringLineIdx.
+// Handles both single-line and multi-line docstrings.
+func extractDocstringContent(lines []string, docstringLineIdx int, defIndent int) string {
+	line := strings.TrimSpace(lines[docstringLineIdx])
+	
+	// Determine quote style
+	var quoteStyle string
+	if strings.HasPrefix(line, `"""`) {
+		quoteStyle = `"""`
+	} else if strings.HasPrefix(line, "'''") {
+		quoteStyle = "'''"
+	} else {
+		return ""
+	}
+	
+	// Remove opening quotes
+	content := strings.TrimPrefix(line, quoteStyle)
+	
+	// Check if it's a single-line docstring (opening and closing quotes on same line)
+	if strings.HasSuffix(content, quoteStyle) && len(content) > len(quoteStyle) {
+		// Single-line docstring
+		content = strings.TrimSuffix(content, quoteStyle)
+		return strings.TrimSpace(content)
+	}
+	
+	// Multi-line docstring: keep collecting until we find the closing quotes
+	var docLines []string
+	docLines = append(docLines, content)
+	
+	for i := docstringLineIdx + 1; i < len(lines); i++ {
+		line := lines[i]
+		trimmed := strings.TrimSpace(line)
+		
+		indent := leadingSpaces(line)
+		if indent <= defIndent {
+			// Shouldn't happen if the docstring is well-formed
+			break
+		}
+		
+		// Check for closing quotes
+		if strings.Contains(trimmed, quoteStyle) {
+			// Found closing quotes
+			endIdx := strings.Index(trimmed, quoteStyle)
+			docLines = append(docLines, trimmed[:endIdx])
+			break
+		}
+		
+		docLines = append(docLines, trimmed)
+	}
+	
+	// Join lines and trim
+	result := strings.Join(docLines, " ")
+	result = strings.TrimSpace(result)
+	// Collapse multiple spaces
+	result = strings.Join(strings.Fields(result), " ")
+	return result
 }
