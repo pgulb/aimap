@@ -70,6 +70,188 @@ func TestParseGoFile(t *testing.T) {
 	}
 }
 
+func TestParseGoGenericType(t *testing.T) {
+	path := filepath.Join("testdata", "src", "hello.go")
+	syms, err := ParseGoFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	byName := make(map[string]symbol.Symbol)
+	for _, s := range syms {
+		byName[s.Name] = s
+	}
+
+	list, ok := byName["List"]
+	if !ok {
+		t.Fatal("expected symbol List")
+	}
+	if list.Kind != symbol.Struct {
+		t.Errorf("List.Kind = %v, want Struct", list.Kind)
+	}
+	if list.TypeParams != "[T any]" {
+		t.Errorf("List.TypeParams = %q, want [T any]", list.TypeParams)
+	}
+
+	pair, ok := byName["Pair"]
+	if !ok {
+		t.Fatal("expected symbol Pair")
+	}
+	if pair.Kind != symbol.Struct {
+		t.Errorf("Pair.Kind = %v, want Struct", pair.Kind)
+	}
+	if pair.TypeParams != "[T, U any]" {
+		t.Errorf("Pair.TypeParams = %q, want [T, U any]", pair.TypeParams)
+	}
+}
+
+func TestParseGoGenericMethod(t *testing.T) {
+	path := filepath.Join("testdata", "src", "hello.go")
+	syms, err := ParseGoFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	byName := make(map[string]symbol.Symbol)
+	for _, s := range syms {
+		byName[s.Name] = s
+	}
+
+	push, ok := byName["Push"]
+	if !ok {
+		t.Fatal("expected symbol Push")
+	}
+	if push.Kind != symbol.Method {
+		t.Errorf("Push.Kind = %v, want Method", push.Kind)
+	}
+	if push.Parent != "List[T]" {
+		t.Errorf("Push.Parent = %q, want List[T]", push.Parent)
+	}
+}
+
+func TestParseGoGenericFunction(t *testing.T) {
+	path := filepath.Join("testdata", "src", "hello.go")
+	syms, err := ParseGoFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	byName := make(map[string]symbol.Symbol)
+	for _, s := range syms {
+		byName[s.Name] = s
+	}
+
+	newList, ok := byName["NewList"]
+	if !ok {
+		t.Fatal("expected symbol NewList")
+	}
+	if newList.Kind != symbol.Function {
+		t.Errorf("NewList.Kind = %v, want Function", newList.Kind)
+	}
+	if newList.TypeParams != "[T any]" {
+		t.Errorf("NewList.TypeParams = %q, want [T any]", newList.TypeParams)
+	}
+}
+
+func TestParseGoInterfaceMethods(t *testing.T) {
+	path := filepath.Join("testdata", "src", "hello.go")
+	syms, err := ParseGoFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	byName := make(map[string]symbol.Symbol)
+	for _, s := range syms {
+		byName[s.Name] = s
+	}
+
+	// Single-method interface.
+	format, ok := byName["Format"]
+	if !ok {
+		t.Fatal("expected symbol Format (interface method)")
+	}
+	if format.Kind != symbol.Method {
+		t.Errorf("Format.Kind = %v, want Method", format.Kind)
+	}
+	if format.Parent != "Formatter" {
+		t.Errorf("Format.Parent = %q, want Formatter", format.Parent)
+	}
+
+	// Multi-method interface with embedded interfaces.
+	read, ok := byName["Read"]
+	if !ok {
+		t.Fatal("expected symbol Read (interface method)")
+	}
+	if read.Kind != symbol.Method {
+		t.Errorf("Read.Kind = %v, want Method", read.Kind)
+	}
+	if read.Parent != "ReadWriter" {
+		t.Errorf("Read.Parent = %q, want ReadWriter", read.Parent)
+	}
+
+	write, ok := byName["Write"]
+	if !ok {
+		t.Fatal("expected symbol Write (interface method)")
+	}
+	if write.Kind != symbol.Method {
+		t.Errorf("Write.Kind = %v, want Method", write.Kind)
+	}
+	if write.Parent != "ReadWriter" {
+		t.Errorf("Write.Parent = %q, want ReadWriter", write.Parent)
+	}
+
+	// Embedded interfaces in ReadWriter.
+	reader, ok := byName["Reader"]
+	if !ok {
+		t.Fatal("expected symbol Reader (embedded interface)")
+	}
+	if reader.Kind != symbol.Type {
+		t.Errorf("Reader.Kind = %v, want Type", reader.Kind)
+	}
+	if reader.Parent != "ReadWriter" {
+		t.Errorf("Reader.Parent = %q, want ReadWriter", reader.Parent)
+	}
+
+	writer, ok := byName["Writer"]
+	if !ok {
+		t.Fatal("expected symbol Writer (embedded interface)")
+	}
+	if writer.Kind != symbol.Type {
+		t.Errorf("Writer.Kind = %v, want Type", writer.Kind)
+	}
+	if writer.Parent != "ReadWriter" {
+		t.Errorf("Writer.Parent = %q, want ReadWriter", writer.Parent)
+	}
+}
+
+func TestParseGoEmbeddedFields(t *testing.T) {
+	path := filepath.Join("testdata", "src", "hello.go")
+	syms, err := ParseGoFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Find embedded field symbols — unnamed fields in structs.
+	var embedded []symbol.Symbol
+	for _, s := range syms {
+		if s.Parent == "Node" || s.Parent == "Config" {
+			embedded = append(embedded, s)
+		}
+	}
+
+	// Node embeds *List[int].
+	var found bool
+	for _, s := range embedded {
+		if s.Parent == "Node" && s.Kind == symbol.Type && s.Name == "*List[int]" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("expected embedded field *List[int] in Node")
+	}
+}
+
 func TestParseGoFileWithComments(t *testing.T) {
 	path := filepath.Join("testdata", "src", "comments.go")
 	syms, err := ParseGoFile(path)

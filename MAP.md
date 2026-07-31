@@ -137,9 +137,9 @@ aimap/
 - `marker` — constant (line 13)
 - `generatedNotice` — constant (line 15)
 - `kindLabel` — function (lines 17-38)
-- `Render` — function (lines 45-145) — Render writes symbols to the specified output path as a markdown file.
-- `relativize` — function (lines 147-153)
-- `formatLineRange` — function (lines 155-160)
+- `Render` — function (lines 45-149) — Render writes symbols to the specified output path as a markdown file.
+- `relativize` — function (lines 151-157)
+- `formatLineRange` — function (lines 159-164)
 
 #### internal/output/output_test.go
 
@@ -149,19 +149,24 @@ aimap/
 - `TestRenderGoSymbols` — function (lines 111-154)
 - `TestRenderPythonSymbols` — function (lines 156-192)
 - `TestRenderLineRanges` — function (lines 194-220)
-- `TestKindLabel` — function (lines 222-243)
+- `TestRenderTypeParams` — function (lines 222-252)
+- `TestKindLabel` — function (lines 254-275)
 
 #### internal/parser/parser_go.go
 
-- `ParseGoFile` — function (lines 13-35) — ParseGoFile parses a single Go source file and returns the symbols found in it.
-- `parseGenDecl` — function (lines 38-91) — parseGenDecl handles var, const, type, and import declarations.
-- `parseFuncDecl` — function (lines 94-113) — parseFuncDecl handles function and method declarations.
-- `receiverName` — function (lines 116-126) — receiverName extracts the type name from a receiver expression.
-- `docCommentFromGroup` — function (lines 128-133)
-- `ParseGoDir` — function (lines 137-155) — ParseGoDir parses all .go files in a directory.
-- `parseASTFile` — function (lines 157-170)
-- `ParseFile` — function (lines 173-188) — ParseFile detects the language from the file extension and parses accordingly.
-- `fileExt` — function (lines 190-200)
+- `ParseGoFile` — function (lines 15-34) — ParseGoFile parses a single Go source file and returns the symbols found in it.
+- `parseGenDecl` — function (lines 37-89) — parseGenDecl handles var, const, type, and import declarations.
+- `parseInterfaceMethods` — function (lines 92-122) — parseInterfaceMethods extracts method symbols from an interface type.
+- `parseStructEmbedded` — function (lines 125-146) — parseStructEmbedded extracts embedded type symbols from a struct.
+- `parseFuncDecl` — function (lines 149-174) — parseFuncDecl handles function and method declarations.
+- `receiverName` — function (lines 178-196) — receiverName extracts the full type name from a receiver expression,
+- `formatTypeParams` — function (lines 199-222) — formatTypeParams formats an ast.FieldList of type parameters as a string like "[T any]".
+- `exprString` — function (lines 225-229) — exprString converts an ast.Expr to a string representation using go/printer.
+- `docCommentFromGroup` — function (lines 231-236)
+- `ParseGoDir` — function (lines 239-257) — ParseGoDir parses all .go files in a directory.
+- `parseASTFile` — function (lines 259-272)
+- `ParseFile` — function (lines 275-290) — ParseFile detects the language from the file extension and parses accordingly.
+- `fileExt` — function (lines 292-302)
 
 #### internal/parser/parser_python.go
 
@@ -176,13 +181,18 @@ aimap/
 #### internal/parser/parser_test.go
 
 - `TestParseGoFile` — function (lines 10-71)
-- `TestParseGoFileWithComments` — function (lines 73-92)
-- `TestParseEmptyGoFile` — function (lines 94-102)
-- `TestParseNonExistentGoFile` — function (lines 104-109)
-- `TestParsePythonFile` — function (lines 111-190)
-- `TestParsePythonEmptyFile` — function (lines 192-200)
-- `TestParsePythonLineNumbers` — function (lines 202-236)
-- `TestParseGoVariable` — function (lines 238-257)
+- `TestParseGoGenericType` — function (lines 73-106)
+- `TestParseGoGenericMethod` — function (lines 108-130)
+- `TestParseGoGenericFunction` — function (lines 132-154)
+- `TestParseGoInterfaceMethods` — function (lines 156-225)
+- `TestParseGoEmbeddedFields` — function (lines 227-253)
+- `TestParseGoFileWithComments` — function (lines 255-274)
+- `TestParseEmptyGoFile` — function (lines 276-284)
+- `TestParseNonExistentGoFile` — function (lines 286-291)
+- `TestParsePythonFile` — function (lines 293-372)
+- `TestParsePythonEmptyFile` — function (lines 374-382)
+- `TestParsePythonLineNumbers` — function (lines 384-418)
+- `TestParseGoVariable` — function (lines 420-439)
 
 #### internal/parser/testdata/src/comments.go
 
@@ -191,12 +201,24 @@ aimap/
 
 #### internal/parser/testdata/src/hello.go
 
-- `Greeting` — function (lines 7-9) — Greeting returns a friendly message.
-- `Config` — struct (lines 12-15) — Config holds application configuration.
-- `Formatter` — interface (lines 18-20) — Formatter defines output formatting.
-- `Config.GetName` — method (lines 23-25) — GetName returns the config name.
-- `AppVersion` — constant (line 28) — AppVersion is the current version.
-- `DebugVar` — variable (line 31) — DebugVar controls debug output.
+- `Greeting` — function (lines 6-8) — Greeting returns a friendly message.
+- `Config` — struct (lines 11-14) — Config holds application configuration.
+- `Formatter` — interface (lines 17-19) — Formatter defines output formatting.
+- `Formatter.Format` — method (line 18)
+- `Config.GetName` — method (lines 22-24) — GetName returns the config name.
+- `AppVersion` — constant (line 27) — AppVersion is the current version.
+- `DebugVar` — variable (line 30) — DebugVar controls debug output.
+- `List[T any]` — struct (lines 33-35) — List is a generic collection.
+- `List[T].Push` — method (lines 38-40) — Push adds an item to the list.
+- `Pair[T, U any]` — struct (lines 43-46) — Pair is a generic pair.
+- `ReadWriter` — interface (lines 49-54) — ReadWriter combines io.Reader and io.Writer.
+- `ReadWriter.Reader` — type (line 50)
+- `ReadWriter.Writer` — type (line 51)
+- `ReadWriter.Read` — method (line 52)
+- `ReadWriter.Write` — method (line 53)
+- `NewList[T any]` — function (lines 57-59) — NewList creates a new List.
+- `Node` — struct (lines 62-65) — Node is a tree node.
+- `Node.*List[int]` — type (line 63) — Node is a tree node.
 
 #### internal/scanner/scanner.go
 
@@ -226,5 +248,5 @@ aimap/
 - `Variable` — constant (line 12)
 - `Constant` — constant (line 13)
 - `Class` — constant (line 14)
-- `Symbol` — struct (lines 18-26) — Symbol represents a named declaration in source code.
+- `Symbol` — struct (lines 18-27) — Symbol represents a named declaration in source code.
 

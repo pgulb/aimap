@@ -3,8 +3,10 @@ package parser
 import (
 	"go/ast"
 	"go/parser"
+	"go/printer"
 	"go/token"
 	"os"
+	"strings"
 
 	"github.com/pgulb/aimap/internal/symbol"
 )
@@ -16,9 +18,6 @@ func ParseGoFile(path string) ([]symbol.Symbol, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fileStart := fset.File(f.Pos()).Offset(f.Pos())
-	_ = fileStart
 
 	var syms []symbol.Symbol
 
@@ -43,19 +42,24 @@ func parseGenDecl(d *ast.GenDecl, fset *token.FileSet, path string) []symbol.Sym
 		switch s := spec.(type) {
 		case *ast.TypeSpec:
 			kind := symbol.Type
-			if _, isStruct := s.Type.(*ast.StructType); isStruct {
+			typeParams := formatTypeParams(fset, s.TypeParams)
+
+			if st, isStruct := s.Type.(*ast.StructType); isStruct {
 				kind = symbol.Struct
-			} else if _, isInterface := s.Type.(*ast.InterfaceType); isInterface {
+				syms = append(syms, parseStructEmbedded(st, fset, path, s.Name.Name, comment)...)
+			} else if it, isInterface := s.Type.(*ast.InterfaceType); isInterface {
 				kind = symbol.Interface
+				syms = append(syms, parseInterfaceMethods(it, fset, path, s.Name.Name)...)
 			}
 
 			syms = append(syms, symbol.Symbol{
-				Name:      s.Name.Name,
-				Kind:      kind,
-				FilePath:  path,
-				LineStart: fset.Position(s.Pos()).Line,
-				LineEnd:   fset.Position(s.End()).Line,
-				Comment:   comment,
+				Name:       s.Name.Name,
+				TypeParams: typeParams,
+				Kind:       kind,
+				FilePath:   path,
+				LineStart:  fset.Position(s.Pos()).Line,
+				LineEnd:    fset.Position(s.End()).Line,
+				Comment:    comment,
 			})
 		case *ast.ValueSpec:
 			kind := symbol.Variable
@@ -66,12 +70,6 @@ func parseGenDecl(d *ast.GenDecl, fset *token.FileSet, path string) []symbol.Sym
 			for _, name := range s.Names {
 				lineStart := fset.Position(s.Pos()).Line
 				lineEnd := fset.Position(s.End()).Line
-				if s.Type != nil {
-					lineEnd = fset.Position(s.End()).Line
-				}
-				if s.Values != nil && len(s.Values) > 0 {
-					lineEnd = fset.Position(s.End()).Line
-				}
 				if lineEnd < lineStart {
 					lineEnd = lineStart
 				}
@@ -90,39 +88,144 @@ func parseGenDecl(d *ast.GenDecl, fset *token.FileSet, path string) []symbol.Sym
 	return syms
 }
 
+// parseInterfaceMethods extracts method symbols from an interface type.
+func parseInterfaceMethods(it *ast.InterfaceType, fset *token.FileSet, path, parent string) []symbol.Symbol {
+	var syms []symbol.Symbol
+	for _, field := range it.Methods.List {
+		// Named methods.
+		for _, name := range field.Names {
+			syms = append(syms, symbol.Symbol{
+				Name:      name.Name,
+				Kind:      symbol.Method,
+				FilePath:  path,
+				LineStart: fset.Position(field.Pos()).Line,
+				LineEnd:   fset.Position(field.End()).Line,
+				Comment:   docCommentFromGroup(field.Doc),
+				Parent:    parent,
+			})
+		}
+		// Embedded interface — field with no names, just a type expression.
+		if len(field.Names) == 0 && field.Type != nil {
+			typeName := exprString(fset, field.Type)
+			syms = append(syms, symbol.Symbol{
+				Name:      typeName,
+				Kind:      symbol.Type,
+				FilePath:  path,
+				LineStart: fset.Position(field.Pos()).Line,
+				LineEnd:   fset.Position(field.End()).Line,
+				Comment:   docCommentFromGroup(field.Doc),
+				Parent:    parent,
+			})
+		}
+	}
+	return syms
+}
+
+// parseStructEmbedded extracts embedded type symbols from a struct.
+func parseStructEmbedded(st *ast.StructType, fset *token.FileSet, path, parent, parentComment string) []symbol.Symbol {
+	var syms []symbol.Symbol
+	for _, field := range st.Fields.List {
+		if len(field.Names) == 0 && field.Type != nil {
+			typeName := exprString(fset, field.Type)
+			comment := docCommentFromGroup(field.Doc)
+			if comment == "" {
+				comment = parentComment
+			}
+			syms = append(syms, symbol.Symbol{
+				Name:      typeName,
+				Kind:      symbol.Type,
+				FilePath:  path,
+				LineStart: fset.Position(field.Pos()).Line,
+				LineEnd:   fset.Position(field.End()).Line,
+				Comment:   comment,
+				Parent:    parent,
+			})
+		}
+	}
+	return syms
+}
+
 // parseFuncDecl handles function and method declarations.
 func parseFuncDecl(d *ast.FuncDecl, fset *token.FileSet, path string) symbol.Symbol {
 	kind := symbol.Function
 	parent := ""
 	if d.Recv != nil && len(d.Recv.List) > 0 {
 		kind = symbol.Method
-		parent = receiverName(d.Recv.List[0].Type)
+		parent = receiverName(fset, d.Recv.List[0].Type)
 	}
 
 	comment := docCommentFromGroup(d.Doc)
 
+	var typeParams string
+	if d.Type.TypeParams != nil {
+		typeParams = formatTypeParams(fset, d.Type.TypeParams)
+	}
+
 	return symbol.Symbol{
-		Name:      d.Name.Name,
-		Kind:      kind,
-		FilePath:  path,
-		LineStart: fset.Position(d.Pos()).Line,
-		LineEnd:   fset.Position(d.End()).Line,
-		Comment:   comment,
-		Parent:    parent,
+		Name:       d.Name.Name,
+		TypeParams: typeParams,
+		Kind:       kind,
+		FilePath:   path,
+		LineStart:  fset.Position(d.Pos()).Line,
+		LineEnd:    fset.Position(d.End()).Line,
+		Comment:    comment,
+		Parent:     parent,
 	}
 }
 
-// receiverName extracts the type name from a receiver expression.
-func receiverName(expr ast.Expr) string {
+// receiverName extracts the full type name from a receiver expression,
+// including type parameters for generic receivers (e.g. "List[T]").
+func receiverName(fset *token.FileSet, expr ast.Expr) string {
 	switch t := expr.(type) {
 	case *ast.Ident:
 		return t.Name
 	case *ast.StarExpr:
-		if ident, ok := t.X.(*ast.Ident); ok {
-			return ident.Name
+		return receiverName(fset, t.X)
+	case *ast.IndexExpr:
+		// e.g. List[T]
+		return exprString(fset, t.X) + "[" + exprString(fset, t.Index) + "]"
+	case *ast.IndexListExpr:
+		// e.g. List[T, U]
+		var parts []string
+		for _, idx := range t.Indices {
+			parts = append(parts, exprString(fset, idx))
 		}
+		return exprString(fset, t.X) + "[" + strings.Join(parts, ", ") + "]"
 	}
 	return ""
+}
+
+// formatTypeParams formats an ast.FieldList of type parameters as a string like "[T any]".
+func formatTypeParams(fset *token.FileSet, fields *ast.FieldList) string {
+	if fields == nil || len(fields.List) == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	sb.WriteString("[")
+	for i, f := range fields.List {
+		if i > 0 {
+			sb.WriteString(", ")
+		}
+		for j, name := range f.Names {
+			if j > 0 {
+				sb.WriteString(", ")
+			}
+			sb.WriteString(name.Name)
+		}
+		if f.Type != nil {
+			sb.WriteString(" ")
+			sb.WriteString(exprString(fset, f.Type))
+		}
+	}
+	sb.WriteString("]")
+	return sb.String()
+}
+
+// exprString converts an ast.Expr to a string representation using go/printer.
+func exprString(fset *token.FileSet, expr ast.Expr) string {
+	var buf strings.Builder
+	printer.Fprint(&buf, fset, expr)
+	return buf.String()
 }
 
 func docCommentFromGroup(g *ast.CommentGroup) string {
@@ -133,7 +236,6 @@ func docCommentFromGroup(g *ast.CommentGroup) string {
 }
 
 // ParseGoDir parses all .go files in a directory.
-// This is a convenience for testing; ParseGoFile is the primary entry point.
 func ParseGoDir(dir string) ([]symbol.Symbol, error) {
 	fset := token.NewFileSet()
 	pkgs, err := parser.ParseDir(fset, dir, nil, parser.ParseComments)

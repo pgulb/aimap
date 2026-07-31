@@ -219,6 +219,38 @@ func TestRenderLineRanges(t *testing.T) {
 	}
 }
 
+func TestRenderTypeParams(t *testing.T) {
+	dir := t.TempDir()
+	outPath := filepath.Join(dir, "MAP.md")
+
+	syms := []symbol.Symbol{
+		{Name: "List", TypeParams: "[T any]", Kind: symbol.Struct, FilePath: "/project/main.go", LineStart: 1, LineEnd: 3},
+		{Name: "Push", Kind: symbol.Method, FilePath: "/project/main.go", LineStart: 5, LineEnd: 7, Parent: "List[T]"},
+		{Name: "NewList", TypeParams: "[T any]", Kind: symbol.Function, FilePath: "/project/main.go", LineStart: 9, LineEnd: 11},
+	}
+
+	err := Render(syms, "/project", outPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	data, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	content := string(data)
+	if !strings.Contains(content, "`List[T any]`") {
+		t.Errorf("expected type-parameterized name List[T any], got: %s", content)
+	}
+	if !strings.Contains(content, "`List[T].Push`") {
+		t.Errorf("expected method with generic parent, got: %s", content)
+	}
+	if !strings.Contains(content, "`NewList[T any]`") {
+		t.Errorf("expected generic function name, got: %s", content)
+	}
+}
+
 func TestKindLabel(t *testing.T) {
 	tests := []struct {
 		kind symbol.SymbolKind

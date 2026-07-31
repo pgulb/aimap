@@ -124,6 +124,10 @@ func Render(symbols []symbol.Symbol, root, outputPath string) error {
 				lineRange := formatLineRange(s.LineStart, s.LineEnd)
 				name := s.Name
 
+				if s.TypeParams != "" {
+					name += s.TypeParams
+				}
+
 				if s.Parent != "" {
 					name = fmt.Sprintf("%s.%s", s.Parent, name)
 				}

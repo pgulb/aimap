@@ -16,11 +16,12 @@ const (
 
 // Symbol represents a named declaration in source code.
 type Symbol struct {
-	Name      string
-	Kind      SymbolKind
-	FilePath  string
-	LineStart int
-	LineEnd   int
-	Comment   string   // Doc comment text, if any
-	Parent    string   // Parent type name (for methods)
+	Name       string
+	TypeParams string   // Generic type parameters, e.g. "[T any]"
+	Kind       SymbolKind
+	FilePath   string
+	LineStart  int
+	LineEnd    int
+	Comment    string   // Doc comment text, if any
+	Parent     string   // Parent type name (for methods, embedded fields)
 }
