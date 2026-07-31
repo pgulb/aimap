@@ -45,10 +45,15 @@ func parseGenDecl(d *ast.GenDecl, fset *token.FileSet, path string) []symbol.Sym
 			kind := symbol.Type
 			typeParams := formatTypeParams(fset, s.TypeParams)
 
-			if st, isStruct := s.Type.(*ast.StructType); isStruct {
-				kind = symbol.Struct
-				syms = append(syms, parseStructEmbedded(st, fset, path, s.Name.Name, comment)...)
-			} else if it, isInterface := s.Type.(*ast.InterfaceType); isInterface {
+		if st, isStruct := s.Type.(*ast.StructType); isStruct {
+			kind = symbol.Struct
+			// Pass struct name with type params (if any) so fields have complete parent name
+			parentName := s.Name.Name
+			if typeParams != "" {
+				parentName = s.Name.Name + typeParams
+			}
+			syms = append(syms, parseStructFields(st, fset, path, parentName, comment)...)
+		} else if it, isInterface := s.Type.(*ast.InterfaceType); isInterface {
 				kind = symbol.Interface
 				syms = append(syms, parseInterfaceMethods(it, fset, path, s.Name.Name)...)
 			}
@@ -122,19 +127,30 @@ func parseInterfaceMethods(it *ast.InterfaceType, fset *token.FileSet, path, par
 	return syms
 }
 
-// parseStructEmbedded extracts embedded type symbols from a struct.
-func parseStructEmbedded(st *ast.StructType, fset *token.FileSet, path, parent, parentComment string) []symbol.Symbol {
+// parseStructFields extracts field symbols from a struct — both named and embedded.
+func parseStructFields(st *ast.StructType, fset *token.FileSet, path, parent, parentComment string) []symbol.Symbol {
 	var syms []symbol.Symbol
 	for _, field := range st.Fields.List {
+		comment := docCommentFromGroup(field.Doc)
 		if len(field.Names) == 0 && field.Type != nil {
 			typeName := exprString(fset, field.Type)
-			comment := docCommentFromGroup(field.Doc)
 			if comment == "" {
 				comment = parentComment
 			}
 			syms = append(syms, symbol.Symbol{
 				Name:      typeName,
 				Kind:      symbol.Type,
+				FilePath:  path,
+				LineStart: fset.Position(field.Pos()).Line,
+				LineEnd:   fset.Position(field.End()).Line,
+				Comment:   comment,
+				Parent:    parent,
+			})
+		}
+		for _, name := range field.Names {
+			syms = append(syms, symbol.Symbol{
+				Name:      name.Name,
+				Kind:      symbol.Variable,
 				FilePath:  path,
 				LineStart: fset.Position(field.Pos()).Line,
 				LineEnd:   fset.Position(field.End()).Line,

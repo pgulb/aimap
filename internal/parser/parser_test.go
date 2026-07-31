@@ -437,3 +437,183 @@ func TestParseGoVariable(t *testing.T) {
 		t.Errorf("DebugVar.Kind = %v, want Variable", v.Kind)
 	}
 }
+
+func TestParsePythonAsyncDef(t *testing.T) {
+	source := `
+import asyncio
+
+# Fetch data from URL
+async def fetch_data(url):
+    await asyncio.sleep(1)
+    return "data"
+
+# Async method in class
+class AsyncClient:
+    async def connect(self):
+        await asyncio.sleep(0.5)
+`
+	syms, err := ParsePythonFile("test.py", source)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	byName := make(map[string]symbol.Symbol)
+	for _, s := range syms {
+		byName[s.Name] = s
+	}
+
+	fetchData, ok := byName["fetch_data"]
+	if !ok {
+		t.Fatal("expected symbol fetch_data (async function)")
+	}
+	if fetchData.Kind != symbol.Function {
+		t.Errorf("fetch_data.Kind = %v, want Function", fetchData.Kind)
+	}
+	if fetchData.Comment != "Fetch data from URL" {
+		t.Errorf("fetch_data.Comment = %q, want 'Fetch data from URL'", fetchData.Comment)
+	}
+
+	client, ok := byName["AsyncClient"]
+	if !ok {
+		t.Fatal("expected symbol AsyncClient")
+	}
+	if client.Kind != symbol.Class {
+		t.Errorf("AsyncClient.Kind = %v, want Class", client.Kind)
+	}
+
+	connect, ok := byName["connect"]
+	if !ok {
+		t.Fatal("expected symbol connect (async method)")
+	}
+	if connect.Kind != symbol.Method {
+		t.Errorf("connect.Kind = %v, want Method", connect.Kind)
+	}
+	if connect.Parent != "AsyncClient" {
+		t.Errorf("connect.Parent = %q, want AsyncClient", connect.Parent)
+	}
+}
+
+func TestParsePythonDecorators(t *testing.T) {
+	source := `
+# Decorated function
+@decorator
+def wrapped_func():
+    pass
+
+# Decorated class
+@decorator
+@another_decorator
+class WrappedClass:
+    # Decorated method
+    @property
+    def value(self):
+        return self._value
+`
+	syms, err := ParsePythonFile("test.py", source)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	byName := make(map[string]symbol.Symbol)
+	for _, s := range syms {
+		byName[s.Name] = s
+	}
+
+	wrapped, ok := byName["wrapped_func"]
+	if !ok {
+		t.Fatal("expected symbol wrapped_func")
+	}
+	if wrapped.Kind != symbol.Function {
+		t.Errorf("wrapped_func.Kind = %v, want Function", wrapped.Kind)
+	}
+
+	wrappedClass, ok := byName["WrappedClass"]
+	if !ok {
+		t.Fatal("expected symbol WrappedClass")
+	}
+	if wrappedClass.Kind != symbol.Class {
+		t.Errorf("WrappedClass.Kind = %v, want Class", wrappedClass.Kind)
+	}
+
+	value, ok := byName["value"]
+	if !ok {
+		t.Fatal("expected symbol value (decorated method)")
+	}
+	if value.Kind != symbol.Method {
+		t.Errorf("value.Kind = %v, want Method", value.Kind)
+	}
+	if value.Parent != "WrappedClass" {
+		t.Errorf("value.Parent = %q, want WrappedClass", value.Parent)
+	}
+}
+
+func TestParseGoNamedStructFields(t *testing.T) {
+	path := filepath.Join("testdata", "src", "hello.go")
+	syms, err := ParseGoFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	byName := make(map[string]symbol.Symbol)
+	for _, s := range syms {
+		byName[s.Name] = s
+	}
+
+	// Config struct named fields
+	name, ok := byName["Name"]
+	if !ok {
+		t.Fatal("expected symbol Name (field of Config)")
+	}
+	if name.Kind != symbol.Variable {
+		t.Errorf("Name.Kind = %v, want Variable", name.Kind)
+	}
+	if name.Parent != "Config" {
+		t.Errorf("Name.Parent = %q, want Config", name.Parent)
+	}
+
+	version, ok := byName["Version"]
+	if !ok {
+		t.Fatal("expected symbol Version (field of Config)")
+	}
+	if version.Kind != symbol.Variable {
+		t.Errorf("Version.Kind = %v, want Variable", version.Kind)
+	}
+	if version.Parent != "Config" {
+		t.Errorf("Version.Parent = %q, want Config", version.Parent)
+	}
+
+	// Pair struct named fields
+	first, ok := byName["First"]
+	if !ok {
+		t.Fatal("expected symbol First (field of Pair)")
+	}
+	if first.Kind != symbol.Variable {
+		t.Errorf("First.Kind = %v, want Variable", first.Kind)
+	}
+	if first.Parent != "Pair[T, U any]" {
+		t.Errorf("First.Parent = %q, want Pair[T, U any]", first.Parent)
+	}
+
+	second, ok := byName["Second"]
+	if !ok {
+		t.Fatal("expected symbol Second (field of Pair)")
+	}
+	if second.Kind != symbol.Variable {
+		t.Errorf("Second.Kind = %v, want Variable", second.Kind)
+	}
+	if second.Parent != "Pair[T, U any]" {
+		t.Errorf("Second.Parent = %q, want Pair[T, U any]", second.Parent)
+	}
+
+	// Node struct named field
+	data, ok := byName["Data"]
+	if !ok {
+		t.Fatal("expected symbol Data (field of Node)")
+	}
+	if data.Kind != symbol.Variable {
+		t.Errorf("Data.Kind = %v, want Variable", data.Kind)
+	}
+	if data.Parent != "Node" {
+		t.Errorf("Data.Parent = %q, want Node", data.Parent)
+	}
+}

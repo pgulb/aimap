@@ -38,6 +38,11 @@ func ParsePythonFile(path, source string) ([]symbol.Symbol, error) {
 		indent := leadingSpaces(line)
 		stripped := strings.TrimLeftFunc(line, unicode.IsSpace)
 
+		// Decorator lines — skip them, they are not symbols.
+		if strings.HasPrefix(stripped, "@") {
+			continue
+		}
+
 		// Class definition.
 		if strings.HasPrefix(stripped, "class ") {
 			name := extractPythonName(stripped, "class ")
@@ -59,9 +64,13 @@ func ParsePythonFile(path, source string) ([]symbol.Symbol, error) {
 			continue
 		}
 
-		// Function definition.
-		if strings.HasPrefix(stripped, "def ") {
-			name := extractPythonName(stripped, "def ")
+		// Function definition (both def and async def).
+		if strings.HasPrefix(stripped, "def ") || strings.HasPrefix(stripped, "async def ") {
+			keyword := "def "
+			if strings.HasPrefix(stripped, "async ") {
+				keyword = "async def "
+			}
+			name := extractPythonName(stripped, keyword)
 			if name != "" {
 				kind := symbol.Function
 				parent := ""
@@ -96,8 +105,7 @@ func ParsePythonFile(path, source string) ([]symbol.Symbol, error) {
 			!strings.HasPrefix(stripped, "with ") && !strings.HasPrefix(stripped, "import ") &&
 			!strings.HasPrefix(stripped, "from ") && !strings.HasPrefix(stripped, "return ") &&
 			!strings.HasPrefix(stripped, "raise ") && !strings.HasPrefix(stripped, "pass") &&
-			!strings.HasPrefix(stripped, "def ") && !strings.HasPrefix(stripped, "class ") &&
-			!strings.HasPrefix(stripped, "@") {
+			!strings.HasPrefix(stripped, "def ") && !strings.HasPrefix(stripped, "class ") {
 
 			name := extractAssignName(stripped)
 			if name != "" && isTopLevel(indent) {
