@@ -115,20 +115,7 @@ func replaceBinary(newBinary, currentExe string) error {
 		return nil
 	}
 
-	src, err := os.Open(newBinary)
-	if err != nil {
-		return err
-	}
-	defer src.Close()
-
-	dst, err := os.OpenFile(currentExe, os.O_WRONLY|os.O_TRUNC, 0755)
-	if err != nil {
-		return fmt.Errorf("open current: %w", err)
-	}
-	defer dst.Close()
-
-	_, err = io.Copy(dst, src)
-	return err
+	return os.Rename(newBinary, currentExe)
 }
 
 // downloadFile downloads a URL to the given file path.

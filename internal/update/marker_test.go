@@ -14,7 +14,14 @@ func TestMarkerDir(t *testing.T) {
 }
 
 func TestCanSelfUpdateFalseByDefault(t *testing.T) {
-	// Should be false when marker doesn't exist.
+	origDir := markerPath
+	defer func() { markerPath = origDir }()
+
+	tmpDir := t.TempDir()
+	markerPath = func() string {
+		return filepath.Join(tmpDir, "will_autoupdate")
+	}
+
 	got := CanSelfUpdate()
 	if got {
 		t.Error("CanSelfUpdate() should be false when no marker exists")
