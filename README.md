@@ -8,11 +8,27 @@ Instead of full-repository searches, AI agents (and contributors) can read `MAP.
 
 ## Installation
 
+### Quick install (recommended)
+
+**Linux / macOS:**
+```bash
+curl -sfL https://raw.githubusercontent.com/pgulb/aimap/main/install.sh | sh
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/pgulb/aimap/main/install.ps1 | iex
+```
+
+The script downloads the latest pre-built binary for your platform and installs it to `/usr/local/bin` (Linux/macOS) or `%LOCALAPPDATA%\Programs` (Windows).
+
+### With Go installed
+
 ```bash
 go install github.com/pgulb/aimap/cmd/aimap@latest
 ```
 
-Or build from source:
+### Build from source
 
 ```bash
 git clone https://github.com/pgulb/aimap.git

@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          check-latest: true
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -race ./...
+
+      - name: Coverage
+        run: go test -cover ./...
+
+  release:
+    name: Release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: [test]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          check-latest: true
+
+      - name: Cross-compile
+        run: |
+          mkdir -p dist
+
+          # linux/amd64
+          GOOS=linux GOARCH=amd64 go build -o dist/aimap_linux_amd64/aimap ./cmd/aimap/
+          tar czf dist/aimap_linux_amd64.tar.gz -C dist/aimap_linux_amd64 aimap
+
+          # linux/arm64
+          GOOS=linux GOARCH=arm64 go build -o dist/aimap_linux_arm64/aimap ./cmd/aimap/
+          tar czf dist/aimap_linux_arm64.tar.gz -C dist/aimap_linux_arm64 aimap
+
+          # darwin/amd64
+          GOOS=darwin GOARCH=amd64 go build -o dist/aimap_darwin_amd64/aimap ./cmd/aimap/
+          tar czf dist/aimap_darwin_amd64.tar.gz -C dist/aimap_darwin_amd64 aimap
+
+          # darwin/arm64
+          GOOS=darwin GOARCH=arm64 go build -o dist/aimap_darwin_arm64/aimap ./cmd/aimap/
+          tar czf dist/aimap_darwin_arm64.tar.gz -C dist/aimap_darwin_arm64 aimap
+
+          # windows/amd64
+          GOOS=windows GOARCH=amd64 go build -o dist/aimap_windows_amd64/aimap.exe ./cmd/aimap/
+          cd dist/aimap_windows_amd64 && zip -r ../../dist/aimap_windows_amd64.zip aimap.exe && cd ../..
+
+          ls -lh dist/*.tar.gz dist/*.zip
+
+      - name: Generate release tag
+        id: tag
+        run: echo "tag=release-$(date +%Y%m%d%H%M%S)-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: Build ${{ steps.tag.outputs.tag }}
+          body: |
+            Automatic build from commit ${{ github.sha }}.
+
+            ## Downloads
+
+            | Platform | Architecture | Link |
+            |---|---|---|
+            | Linux | amd64 | aimap_linux_amd64.tar.gz |
+            | Linux | arm64 | aimap_linux_arm64.tar.gz |
+            | macOS (Intel) | amd64 | aimap_darwin_amd64.tar.gz |
+            | macOS (Apple Silicon) | arm64 | aimap_darwin_arm64.tar.gz |
+            | Windows | amd64 | aimap_windows_amd64.zip |
+          files: |
+            dist/aimap_linux_amd64.tar.gz
+            dist/aimap_linux_arm64.tar.gz
+            dist/aimap_darwin_amd64.tar.gz
+            dist/aimap_darwin_arm64.tar.gz
+            dist/aimap_windows_amd64.zip
