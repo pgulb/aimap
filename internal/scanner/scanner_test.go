@@ -69,22 +69,22 @@ func TestScan(t *testing.T) {
 	}
 
 	// Map results by base name for easier checking.
-	byName := make(map[string]Language)
+	byName := make(map[string]bool)
 	for _, r := range results {
 		base := filepath.Base(r.Path)
-		byName[base] = r.Language
+		byName[base] = true
 	}
 
-	if byName["main.go"] != LanguageGo {
-		t.Error("expected main.go to be found as Go")
+	if !byName["main.go"] {
+		t.Error("expected main.go to be found")
 	}
-	if byName["parser.go"] != LanguageGo {
-		t.Error("expected parser.go to be found as Go")
+	if !byName["parser.go"] {
+		t.Error("expected parser.go to be found")
 	}
-	if byName["parser_test.go"] != LanguageGo {
-		t.Error("expected parser_test.go to be found as Go")
+	if !byName["parser_test.go"] {
+		t.Error("expected parser_test.go to be found")
 	}
-	if byName["app.py"] != LanguagePython {
-		t.Error("expected app.py to be found as Python")
+	if !byName["app.py"] {
+		t.Error("expected app.py to be found")
 	}
 }

@@ -67,17 +67,16 @@
 
 #### internal/parser/parser_go.go
 
-- `ParseGoFile` — function (lines 15-34) — ParseGoFile parses a single Go source file and returns the symbols found in it.
-- `parseGenDecl` — function (lines 37-89) — parseGenDecl handles var, const, type, and import declarations.
-- `parseInterfaceMethods` — function (lines 92-122) — parseInterfaceMethods extracts method symbols from an interface type.
-- `parseStructEmbedded` — function (lines 125-146) — parseStructEmbedded extracts embedded type symbols from a struct.
-- `parseFuncDecl` — function (lines 149-174) — parseFuncDecl handles function and method declarations.
-- `receiverName` — function (lines 178-196) — receiverName extracts the full type name from a receiver expression,
-- `formatTypeParams` — function (lines 199-222) — formatTypeParams formats an ast.FieldList of type parameters as a string like "[T any]".
-- `exprString` — function (lines 225-229) — exprString converts an ast.Expr to a string representation using go/printer.
-- `docCommentFromGroup` — function (lines 231-236)
-- `ParseFile` — function (lines 239-254) — ParseFile detects the language from the file extension and parses accordingly.
-- `fileExt` — function (lines 256-266)
+- `ParseGoFile` — function (lines 16-35) — ParseGoFile parses a single Go source file and returns the symbols found in it.
+- `parseGenDecl` — function (lines 38-90) — parseGenDecl handles var, const, type, and import declarations.
+- `parseInterfaceMethods` — function (lines 93-123) — parseInterfaceMethods extracts method symbols from an interface type.
+- `parseStructEmbedded` — function (lines 126-147) — parseStructEmbedded extracts embedded type symbols from a struct.
+- `parseFuncDecl` — function (lines 150-175) — parseFuncDecl handles function and method declarations.
+- `receiverName` — function (lines 179-197) — receiverName extracts the full type name from a receiver expression,
+- `formatTypeParams` — function (lines 200-223) — formatTypeParams formats an ast.FieldList of type parameters as a string like "[T any]".
+- `exprString` — function (lines 226-230) — exprString converts an ast.Expr to a string representation using go/printer.
+- `docCommentFromGroup` — function (lines 232-237)
+- `ParseFile` — function (lines 240-255) — ParseFile detects the language from the file extension and parses accordingly.
 
 #### internal/parser/parser_python.go
 
@@ -137,11 +136,11 @@
 - `LanguageGo` — constant (line 14)
 - `LanguagePython` — constant (line 15)
 - `LanguageOther` — constant (line 16)
-- `FileInfo` — struct (lines 20-23) — FileInfo describes a source file to be parsed.
-- `Scanner` — struct (lines 26-28) — Scanner walks a directory tree and returns files to parse.
-- `NewScanner` — function (lines 31-33) — NewScanner creates a Scanner that uses the given matcher for ignore rules.
-- `Scanner.Scan` — method (lines 36-80) — Scan walks root and returns all non-ignored source files.
-- `classifyFile` — function (lines 82-92)
+- `FileInfo` — struct (lines 20-22) — FileInfo describes a source file to be parsed.
+- `Scanner` — struct (lines 25-27) — Scanner walks a directory tree and returns files to parse.
+- `NewScanner` — function (lines 30-32) — NewScanner creates a Scanner that uses the given matcher for ignore rules.
+- `Scanner.Scan` — method (lines 35-78) — Scan walks root and returns all non-ignored source files.
+- `classifyFile` — function (lines 80-90)
 
 #### internal/scanner/scanner_test.go
 

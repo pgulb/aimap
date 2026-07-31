@@ -18,8 +18,7 @@ const (
 
 // FileInfo describes a source file to be parsed.
 type FileInfo struct {
-	Path     string
-	Language Language
+	Path string
 }
 
 // Scanner walks a directory tree and returns files to parse.
@@ -71,8 +70,7 @@ func (s *Scanner) Scan(root string) ([]FileInfo, error) {
 		}
 
 		files = append(files, FileInfo{
-			Path:     path,
-			Language: lang,
+			Path: path,
 		})
 		return nil
 	})

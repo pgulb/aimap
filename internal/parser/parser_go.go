@@ -6,6 +6,7 @@ import (
 	"go/printer"
 	"go/token"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/pgulb/aimap/internal/symbol"
@@ -242,7 +243,7 @@ func ParseFile(path string) ([]symbol.Symbol, error) {
 		return nil, err
 	}
 
-	ext := fileExt(path)
+	ext := filepath.Ext(path)
 	switch ext {
 	case ".go":
 		return ParseGoFile(path)
@@ -251,16 +252,4 @@ func ParseFile(path string) ([]symbol.Symbol, error) {
 	default:
 		return nil, nil
 	}
-}
-
-func fileExt(path string) string {
-	for i := len(path) - 1; i >= 0; i-- {
-		if path[i] == '.' {
-			return path[i:]
-		}
-		if path[i] == '/' || path[i] == '\\' {
-			break
-		}
-	}
-	return ""
 }
