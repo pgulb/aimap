@@ -1,0 +1,28 @@
+# Binaries
+/aimap
+/aimap.exe
+*.test
+*.test.exe
+*.out
+
+# Go workspace
+go.work
+go.work.sum
+
+# Vendor
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# aimap dev artifacts
+.aimapignore_dev
+MAP_dev.md
