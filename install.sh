@@ -69,6 +69,15 @@ chmod +x "$DEST/$BINARY"
 echo ""
 echo "Installed to $DEST/$BINARY"
 
+# Create self-update marker file.
+if [ "$OS" = "darwin" ]; then
+  MARKER_DIR="$HOME/Library/Application Support/aimap"
+else
+  MARKER_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/aimap"
+fi
+mkdir -p "$MARKER_DIR"
+touch "$MARKER_DIR/will_autoupdate"
+
 # Check if destination is on PATH.
 case ":$PATH:" in
   *":$DEST:"*) ;;

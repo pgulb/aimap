@@ -10,13 +10,20 @@ import (
 	"github.com/pgulb/aimap/internal/parser"
 	"github.com/pgulb/aimap/internal/scanner"
 	"github.com/pgulb/aimap/internal/symbol"
+	"github.com/pgulb/aimap/internal/update"
 )
+
+// version is set at build time via -ldflags, e.g.:
+// go build -ldflags="-X main.version=release-20260731-abc1234" ./cmd/aimap/
+var version = "dev"
 
 func main() {
 	root := flag.String("path", ".", "project root directory")
 	outputFlag := flag.String("output", "", "output file path (default MAP.md, or MAP_dev.md with --dev)")
 	verbose := flag.Bool("v", false, "verbose output")
 	dev := flag.Bool("dev", false, "use .aimapignore_dev and MAP_dev.md instead of production files")
+	selfUpdate := flag.Bool("self-update", false, "check for updates and replace the current binary")
+	enableSelfUpdate := flag.Bool("enable-self-update", false, "enable self-update for installations not using the install script")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: aimap [flags]\n\n")
@@ -26,6 +33,27 @@ func main() {
 	}
 
 	flag.Parse()
+
+	if *selfUpdate {
+		if err := update.Do(version, *verbose); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	if *enableSelfUpdate {
+		if update.CanSelfUpdate() {
+			fmt.Println("Self-update is already enabled.")
+			return
+		}
+		if err := update.CreateMarker(); err != nil {
+			fmt.Fprintf(os.Stderr, "error: failed to enable self-update: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("Self-update enabled. Run 'aimap --self-update' to update.")
+		return
+	}
 
 	ignoreFileName := ".aimapignore"
 	outPath := "MAP.md"

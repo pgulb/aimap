@@ -78,6 +78,11 @@ if (-not $destDir) {
 $destPath = Join-Path $destDir $binary
 Copy-Item -Path $exePath -Destination $destPath -Force
 
+# Create self-update marker file.
+$markerDir = "$env:APPDATA\aimap"
+New-Item -ItemType Directory -Path $markerDir -Force | Out-Null
+New-Item -ItemType File -Path "$markerDir\will_autoupdate" -Force | Out-Null
+
 Write-Host ""
 Write-Host "Installed to $destPath"
 
