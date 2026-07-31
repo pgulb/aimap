@@ -24,6 +24,7 @@ func main() {
 	dev := flag.Bool("dev", false, "use .aimapignore_dev and MAP_dev.md instead of production files")
 	selfUpdate := flag.Bool("self-update", false, "check for updates and replace the current binary")
 	enableSelfUpdate := flag.Bool("enable-self-update", false, "enable self-update for installations not using the install script")
+	versionFlag := flag.Bool("version", false, "print version and exit")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: aimap [flags]\n\n")
@@ -33,6 +34,11 @@ func main() {
 	}
 
 	flag.Parse()
+
+	if *versionFlag {
+		fmt.Println("aimap", version)
+		return
+	}
 
 	if *selfUpdate {
 		if err := update.Do(version, *verbose); err != nil {

@@ -203,21 +203,15 @@ aimap/
 - `Greeting` — function (lines 6-8) — Greeting returns a friendly message.
 - `Config` — struct (lines 11-14) — Config holds application configuration.
 - `Formatter` — interface (lines 17-19) — Formatter defines output formatting.
-- `Formatter.Format` — method (line 18)
 - `Config.GetName` — method (lines 22-24) — GetName returns the config name.
 - `AppVersion` — constant (line 27) — AppVersion is the current version.
 - `DebugVar` — variable (line 30) — DebugVar controls debug output.
-- `List[T any]` — struct (lines 33-35) — List is a generic collection.
-- `List[T].Push` — method (lines 38-40) — Push adds an item to the list.
-- `Pair[T, U any]` — struct (lines 43-46) — Pair is a generic pair.
+- `List` — struct (lines 33-35) — List is a generic collection.
+- `Push` — method (lines 38-40) — Push adds an item to the list.
+- `Pair` — struct (lines 43-46) — Pair is a generic pair.
 - `ReadWriter` — interface (lines 49-54) — ReadWriter combines io.Reader and io.Writer.
-- `ReadWriter.Reader` — type (line 50)
-- `ReadWriter.Writer` — type (line 51)
-- `ReadWriter.Read` — method (line 52)
-- `ReadWriter.Write` — method (line 53)
-- `NewList[T any]` — function (lines 57-59) — NewList creates a new List.
+- `NewList` — function (lines 57-59) — NewList creates a new List.
 - `Node` — struct (lines 62-65) — Node is a tree node.
-- `Node.*List[int]` — type (line 63) — Node is a tree node.
 
 #### internal/scanner/scanner.go
 
