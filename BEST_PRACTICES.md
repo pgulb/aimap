@@ -25,6 +25,7 @@ Internal packages are organized by responsibility, not by file type:
 | `internal/ignore/` | `.aimapignore` parsing (gitignore-style pattern matching) |
 | `internal/output/` | Render symbol list to `MAP.md` |
 | `internal/config/` | Load optional configuration |
+| `internal/update/` | Self-update from GitHub releases |
 
 ## File Organization
 
@@ -154,7 +155,7 @@ type Scanner struct { ... }
 ## Code Review Expectations
 
 - **Every PR must include or update tests**.
-- **Every PR must update `MAP.md`** — update the architectural overview manually, then regenerate the symbol map with `go run ./cmd/aimap/`.
+- **Every PR must update `ARCHITECTURE.md`** if the project structure or architecture has changed, and regenerate `MAP.md` with `go run ./cmd/aimap/`.
 - **No external dependencies** — any proposed dependency must be justified in the PR description.
 - **File size check** — verify no `.go` file exceeds 500 lines (soft) or 1000 lines (hard).
 - **`go vet` must pass** — run `go vet ./...` before submitting.
@@ -165,7 +166,7 @@ type Scanner struct { ... }
 - **Split large files first**: when a `.go` file exceeds 500 lines, split it before adding new code.
 - **Preserve package structure**: do not move symbols between packages as part of refactoring unless the package boundary is wrong.
 - **One refactoring per PR**: avoid mixing refactoring with feature work.
-- **Update `MAP.md`**: after any structural change, update the architectural overview and regenerate the symbol map with `go run ./cmd/aimap/`.
+- **Update `ARCHITECTURE.md`**: after any structural change, update the architectural overview and regenerate the symbol map with `go run ./cmd/aimap/`.
 - **Run tests after refactoring**: ensure no regressions before submitting.
 
 ## Anti-patterns to Avoid

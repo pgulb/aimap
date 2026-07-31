@@ -12,20 +12,18 @@ aimap is a CLI tool written in Go that scans Go and Python projects and generate
 - **Configurable ignores**: `.aimapignore` file with gitignore syntax for user-defined exclusions.
 - **Self-hosting**: aimap will be used by AI agents to implement aimap itself, once its features are sufficient.
 
-## Using MAP.md
+## Using MAP.md and ARCHITECTURE.md
 
-`MAP.md` is the primary navigation document for this repository. It has two sections:
+The repository has two primary navigation documents:
 
-1. **Architectural overview** (top) — manually maintained by contributors. Describes project structure, packages, key types, and cross-module dependencies.
-2. **Symbol map** (below the overview) — **automatically generated** by running `aimap` in the project root. Lists every function, method, type, variable, and constant with file paths and line numbers.
+- **`ARCHITECTURE.md`** — manually maintained. Describes project structure, packages, key types, and cross-module dependencies.
+- **`MAP.md`** — **fully auto-generated** by running `aimap` in the project root. Lists every function, method, type, variable, and constant with file paths and line numbers. Do not edit by hand.
 
-**AI agents must consult `MAP.md` before exploring the repository or searching for code.**
+**AI agents should consult both `ARCHITECTURE.md` and `MAP.md` before exploring the repository or searching for code.**
 
-Its purpose is to allow contributors to quickly locate the relevant parts of the codebase without performing unnecessary repository-wide searches.
+Their purpose is to allow contributors to quickly locate the relevant parts of the codebase without performing unnecessary repository-wide searches.
 
-`MAP.md` provides a concise, high-level architectural overview of the project rather than implementation details.
-
-It answers questions such as:
+They answer questions such as:
 
 - Where is a feature implemented?
 - Which module owns a responsibility?
@@ -37,16 +35,16 @@ It answers questions such as:
 
 ### Workflow
 
-1. **Read `MAP.md`** before searching the repository.
-2. **Use `MAP.md`** to determine which files and modules are relevant.
+1. **Read `ARCHITECTURE.md`** and **read `MAP.md`** before searching the repository.
+2. **Use them** to determine which files and modules are relevant.
 3. **Restrict exploration** to those locations whenever practical.
-4. **Perform broader searches** only if `MAP.md` is incomplete or outdated.
-5. **Update `MAP.md`** if broader searches reveal missing or incorrect architectural information.
-6. **Treat `MAP.md`** as the canonical architectural index of the repository.
+4. **Perform broader searches** only if `ARCHITECTURE.md` or `MAP.md` is incomplete or outdated.
+5. **Update `ARCHITECTURE.md`** if broader searches reveal missing or incorrect architectural information.
+6. **Treat `ARCHITECTURE.md`** as the canonical architectural index of the repository.
 
-### Regenerating the symbol listing
+### Regenerating MAP.md
 
-Run `aimap` from the project root to regenerate the symbol map section of `MAP.md`:
+Run `aimap` from the project root to regenerate `MAP.md`:
 
 ```bash
 go run ./cmd/aimap/
@@ -54,18 +52,15 @@ go run ./cmd/aimap/
 aimap
 ```
 
-This scans all `.go` and `.py` files (excluding ignored paths) and rewrites the symbol listing. The architectural overview at the top of `MAP.md` is preserved.
+This scans all `.go` and `.py` files (excluding ignored paths) and fully rewrites `MAP.md`.
 
-## Maintaining MAP.md
+## Maintaining ARCHITECTURE.md
 
-`MAP.md` has two parts that are maintained differently:
+`ARCHITECTURE.md` is **manually maintained** by contributors. Update it whenever the project's architecture changes.
 
-- **Architectural overview** (top section) — **manually maintained** by contributors. Update it whenever the project's architecture changes.
-- **Symbol map** (below the overview) — **automatically generated** by `aimap`. Regenerate it after adding, renaming, or deleting source files.
+### When to update ARCHITECTURE.md
 
-### When to update the architectural overview
-
-Update the architectural overview after:
+Update `ARCHITECTURE.md` after:
 
 - creating files
 - deleting files
@@ -84,16 +79,16 @@ Update the architectural overview after:
 - architectural changes affecting project organization
 - splitting a `.go` or `.py` file into multiple files for size or organizational reasons
 
-### When to regenerate the symbol map
+### When to regenerate MAP.md
 
-Run `aimap` to regenerate the symbol map after:
+Run `aimap` to regenerate `MAP.md` after:
 
 - creating, deleting, renaming, or moving any `.go` or `.py` file
 - adding, removing, or renaming any function, method, type, variable, or constant
 
-### How to update MAP.md
+### How to update ARCHITECTURE.md
 
-- Preserve existing useful content in the architectural overview.
+- Preserve existing useful content.
 - Update only the sections affected by the current task.
 - Do not rewrite the entire document unless necessary.
 - Remove obsolete information.
@@ -103,8 +98,8 @@ Run `aimap` to regenerate the symbol map after:
 - Reference the primary location of important functionality rather than every implementation detail.
 - Keep formatting and ordering stable whenever possible.
 - Avoid unnecessary wording, formatting, or organizational changes unrelated to the current task.
-- Before completing any coding task, verify that `MAP.md` accurately reflects the current repository structure.
-- After making structural changes, run `aimap` to regenerate the symbol map, then review and update the architectural overview.
+- Before completing any coding task, verify that `ARCHITECTURE.md` accurately reflects the current repository structure.
+- After making structural changes, run `aimap` to regenerate the symbol map, then review and update `ARCHITECTURE.md`.
 
 ## File Size Limits for .go and .py Files
 
@@ -122,4 +117,4 @@ AI agents must follow this rule whenever creating or editing `.go` or `.py` file
 - **Best practices**: follow `BEST_PRACTICES.md` — naming, error handling, testing, file organization conventions.
 - **Testing**: follow `TESTING.md` — always write tests, use table-driven tests, include regression tests for bug fixes.
 - **No external dependencies**: aimap uses Go standard library only. Do not add third-party packages.
-- **Documentation**: every exported symbol must have a Go doc comment. Update `MAP.md` when architecture changes.
+- **Documentation**: every exported symbol must have a Go doc comment. Update `ARCHITECTURE.md` when architecture changes, and regenerate `MAP.md` with `aimap`.

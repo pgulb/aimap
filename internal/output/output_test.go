@@ -35,44 +35,6 @@ func TestRenderEmpty(t *testing.T) {
 	}
 }
 
-func TestRenderPreservesExistingOverview(t *testing.T) {
-	dir := t.TempDir()
-	outPath := filepath.Join(dir, "MAP.md")
-
-	initial := "# My Project\n\nSome architecture notes.\n\n<!-- SYMBOL MAP -->\n"
-	if err := os.WriteFile(outPath, []byte(initial), 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	syms := []symbol.Symbol{
-		{Name: "Foo", Kind: symbol.Function, FilePath: filepath.Join(dir, "main.go"), LineStart: 1, LineEnd: 5},
-	}
-
-	err := Render(syms, dir, outPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	data, err := os.ReadFile(outPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	content := string(data)
-	if !strings.Contains(content, "# My Project") {
-		t.Error("expected original overview to be preserved")
-	}
-	if !strings.Contains(content, "Some architecture notes") {
-		t.Error("expected architecture notes to be preserved")
-	}
-	if !strings.Contains(content, "`Foo`") {
-		t.Error("expected Foo symbol in generated section")
-	}
-	if !strings.Contains(content, "main.go") {
-		t.Error("expected relative path main.go")
-	}
-}
-
 func TestRenderPathsAreRelative(t *testing.T) {
 	dir := t.TempDir()
 	outPath := filepath.Join(dir, "MAP.md")
