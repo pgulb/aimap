@@ -14,8 +14,6 @@
 - `ignoreHeader` — constant (line 11)
 - `ignoreHeaderDev` — constant (line 13)
 - `Config` — struct (lines 16-19) — Config holds the runtime configuration for aimap.
-- `Config.Root` — variable (line 17)
-- `Config.Matcher` — variable (line 18)
 - `Load` — function (lines 23-39) — Load reads configuration from the project root directory.
 - `EnsureIgnoreFile` — function (lines 43-65) — EnsureIgnoreFile creates the given ignore file in root if it does not exist.
 - `hasHeader` — function (lines 69-78) — hasHeader checks if the first non-empty, non-whitespace line starts with the
@@ -36,7 +34,6 @@
 
 - `builtinPatterns` — variable (lines 11-31)
 - `Matcher` — struct (lines 34-36) — Matcher checks whether a given path should be ignored.
-- `Matcher.patterns` — variable (line 35)
 - `NewMatcher` — function (lines 40-45) — NewMatcher creates a Matcher with the built-in ignore patterns combined with
 - `LoadMatcherFromFile` — function (lines 50-65) — LoadMatcherFromFile reads ignore patterns from path (one per line, gitignore-style)
 - `parsePatterns` — function (lines 67-78)
@@ -124,19 +121,14 @@
 
 - `Greeting` — function (lines 6-8) — Greeting returns a friendly message.
 - `Config` — struct (lines 11-14) — Config holds application configuration.
-- `Config.Name` — variable (line 12)
-- `Config.Version` — variable (line 13)
 - `Formatter` — interface (lines 17-19) — Formatter defines output formatting.
 - `Formatter.Format` — method (line 18)
 - `Config.GetName` — method (lines 22-24) — GetName returns the config name.
 - `AppVersion` — constant (line 27) — AppVersion is the current version.
 - `DebugVar` — variable (line 30) — DebugVar controls debug output.
 - `List[T any]` — struct (lines 33-35) — List is a generic collection.
-- `List[T any].items` — variable (line 34)
 - `List[T].Push` — method (lines 38-40) — Push adds an item to the list.
 - `Pair[T, U any]` — struct (lines 43-46) — Pair is a generic pair.
-- `Pair[T, U any].First` — variable (line 44)
-- `Pair[T, U any].Second` — variable (line 45)
 - `ReadWriter` — interface (lines 49-54) — ReadWriter combines io.Reader and io.Writer.
 - `ReadWriter.Reader` — type (line 50)
 - `ReadWriter.Writer` — type (line 51)
@@ -145,7 +137,6 @@
 - `NewList[T any]` — function (lines 57-59) — NewList creates a new List.
 - `Node` — struct (lines 62-65) — Node is a tree node.
 - `Node.*List[int]` — type (line 63) — Node is a tree node.
-- `Node.Data` — variable (line 64)
 
 #### internal/scanner/scanner.go
 
@@ -154,9 +145,7 @@
 - `LanguagePython` — constant (line 15)
 - `LanguageOther` — constant (line 16)
 - `FileInfo` — struct (lines 20-22) — FileInfo describes a source file to be parsed.
-- `FileInfo.Path` — variable (line 21)
 - `Scanner` — struct (lines 25-27) — Scanner walks a directory tree and returns files to parse.
-- `Scanner.matcher` — variable (line 26)
 - `NewScanner` — function (lines 30-32) — NewScanner creates a Scanner that uses the given matcher for ignore rules.
 - `Scanner.Scan` — method (lines 35-78) — Scan walks root and returns all non-ignored source files.
 - `classifyFile` — function (lines 80-90)
@@ -178,14 +167,6 @@
 - `Constant` — constant (line 13)
 - `Class` — constant (line 14)
 - `Symbol` — struct (lines 18-27) — Symbol represents a named declaration in source code.
-- `Symbol.Name` — variable (line 19)
-- `Symbol.TypeParams` — variable (line 20)
-- `Symbol.Kind` — variable (line 21)
-- `Symbol.FilePath` — variable (line 22)
-- `Symbol.LineStart` — variable (line 23)
-- `Symbol.LineEnd` — variable (line 24)
-- `Symbol.Comment` — variable (line 25)
-- `Symbol.Parent` — variable (line 26)
 
 #### internal/update/extract.go
 
